@@ -2074,3 +2074,32 @@ tr:hover td {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-light);
 }
+/* Chatbot Voice Button */
+.chatbot-voice-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 16px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+.chatbot-voice-btn:hover {
+  background: rgba(10,36,99,0.06);
+}
+
+/* Auth overlay */
+#auth-overlay .form-control {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  transition: all .2s;
+}
+#auth-overlay .form-control:focus {
+  border-color: #0A2463;
+  box-shadow: 0 0 0 3px rgba(10,36,99,0.08);
+}

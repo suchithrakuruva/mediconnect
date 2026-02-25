@@ -188,7 +188,15 @@ const api = {
     },
     ambulance: {
         request: (data) => {
-            const req = { id: ++_store._nextId, ...data, status: 'dispatched', ambulance_number: 'AMB-' + Math.floor(1000 + Math.random() * 9000), eta_minutes: Math.floor(8 + Math.random() * 12), created_at: new Date().toISOString() };
+            const DRIVERS = [
+                { name: 'Ramesh Kumar', phone: '+91-9988776655' },
+                { name: 'Sunil Verma', phone: '+91-9877665544' },
+                { name: 'Mohan Das', phone: '+91-9766554433' },
+                { name: 'Prakash Rao', phone: '+91-9655443322' },
+                { name: 'Vijay Singh', phone: '+91-9544332211' },
+            ];
+            const driver = DRIVERS[Math.floor(Math.random() * DRIVERS.length)];
+            const req = { id: ++_store._nextId, ...data, status: 'dispatched', ambulance_number: 'AMB-' + Math.floor(1000 + Math.random() * 9000), eta_minutes: Math.floor(8 + Math.random() * 12), driver_name: driver.name, driver_phone: driver.phone, created_at: new Date().toISOString() };
             return Promise.resolve(req);
         },
     },
@@ -231,14 +239,18 @@ const api = {
     chatbot: {
         chat: (message) => {
             const KB = [
-                { kw: ['appointment', 'book', 'schedule', 'doctor'], resp: "To book: Go to 'Find Doctors' → Select doctor → Book Appointment → Choose date/time → Confirm." },
-                { kw: ['emergency', 'ambulance', '108', 'urgent'], resp: "For emergencies: Click 🚨 Emergency button or call 108. Average response: 8-20 min." },
-                { kw: ['symptom', 'sick', 'fever', 'pain'], resp: "Use AI Symptom Checker: Select symptoms → Add details → Upload images → Click 'Analyse'." },
-                { kw: ['medicine', 'drug', 'pharmacy', 'order'], resp: "Medicine Delivery: Search → Add to cart → Enter address → Pay → Delivered in 2-4 hours." },
-                { kw: ['hospital', 'nearby', 'bed'], resp: "Find hospitals: Click Emergency & Hospitals → View live map → Click markers for details." },
-                { kw: ['payment', 'pay', 'upi'], resp: "We support UPI, Credit/Debit Cards, Net Banking. All secured with SSL encryption." },
-                { kw: ['blood', 'donate', 'donor'], resp: "Blood Donation: Go to 'Blood & Organ Donor' → Select type → View/register donors." },
-                { kw: ['profile', 'account'], resp: "Click avatar icon → View personal details, appointments, transactions, records." },
+                { kw: ['appointment', 'book', 'schedule', 'doctor visit'], resp: "To book an appointment:\n1. Go to 'Find Doctors' from the sidebar\n2. Browse or search for a specialist\n3. Click 'Book Appointment'\n4. Choose your preferred date and time slot\n5. Add symptoms/reason\n6. Select payment method (UPI/Card/Net Banking)\n7. Confirm booking!\n\nYou can also book via the Telemedicine section for video consultations." },
+                { kw: ['emergency', 'ambulance', '108', 'urgent', 'accident'], resp: "🚨 For emergencies:\n• Click the 🚨 Emergency button in the header\n• Or call 108 (Toll-free) for ambulance\n• Average ambulance response: 8-20 minutes\n• You'll get driver name, contact & live tracking\n• For immediate help, describe your emergency type\n\nEmergency services are available 24/7." },
+                { kw: ['symptom', 'sick', 'fever', 'pain', 'cough', 'cold', 'headache'], resp: "For symptom checking:\n1. Go to 'Symptom Checker' from sidebar\n2. Type your symptoms freely in the text box\n3. You can also use voice input (click microphone)\n4. Add patient details (age, gender, etc.)\n5. Set pain scale and duration\n6. Upload any medical images if needed\n7. Click 'Analyse' for AI recommendations\n\nThe AI will suggest urgency level and recommend specialists." },
+                { kw: ['medicine', 'drug', 'pharmacy', 'order', 'tablet'], resp: "To order medicines:\n1. Go to 'Medicine Delivery' section\n2. Search for your medicine or browse categories\n3. Add items to your cart\n4. Enter delivery address\n5. Pay via UPI/Card/Net Banking\n6. Expected delivery: 2-4 hours\n\n💡 Free delivery on orders above ₹299!" },
+                { kw: ['hospital', 'nearby', 'bed', 'icu'], resp: "To find nearby hospitals:\n1. Click 'Emergency & Hospitals' in sidebar\n2. View live map with hospital markers\n3. Click any marker for details (beds, ICU, phone)\n4. Red markers = Emergency hospitals\n5. Blue = Government, Green = Private\n\nYou can also use 'Detect My Live Location' for nearest results." },
+                { kw: ['payment', 'pay', 'upi', 'card', 'billing'], resp: "Payment options available:\n• UPI (GPay, PhonePe, Paytm, BHIM) — enter your UPI ID\n• Credit/Debit Cards\n• Net Banking (SBI, HDFC, ICICI, PNB, etc.)\n\n🔒 All payments are 256-bit SSL encrypted and PCI DSS compliant.\n\nFor UPI, you'll be redirected to your UPI app directly." },
+                { kw: ['blood', 'donate', 'donor', 'organ'], resp: "Blood & Organ Donation:\n1. Go to 'Blood & Organ Donor' section\n2. Search by blood type (A+, B+, O+, etc.)\n3. View donor details and contact them\n4. Register yourself as a donor to save lives!\n\nAll blood types and organ donors are available in our database." },
+                { kw: ['profile', 'account', 'personal', 'details'], resp: "To manage your profile:\n1. Click your avatar icon (top right)\n2. View and edit personal details\n3. See appointment history\n4. View transaction records\n5. Update medical information\n\nEnsure your profile is complete for better healthcare experience." },
+                { kw: ['telemedicine', 'video', 'online', 'consult'], resp: "Telemedicine consultation:\n1. Go to 'Telemedicine' section\n2. Browse available doctors\n3. Click a doctor to book directly\n4. Choose date and time slot\n5. Describe your health concern\n6. Consultation fee: ₹200-₹800\n7. Mode: Video/Audio via WhatsApp or Zoom\n\nDoctors are available 09:00-17:00." },
+                { kw: ['diet', 'food', 'nutrition', 'healthy'], resp: "For diet & nutrition plans:\n1. Go to 'Diet & Lifestyle' section\n2. Get personalized diet recommendations\n3. Plans based on common Indian diets\n4. Recovery-specific meal suggestions\n\nGeneral tips: Stay hydrated, eat fruits rich in Vitamin C, avoid oily food during illness." },
+                { kw: ['hello', 'hi', 'hey', 'namaste', 'good'], resp: "Namaste! 🙏 Welcome to MediConnect!\n\nI'm your AI powered Health Assistant. I can help you with:\n• 📅 Booking appointments\n• 🩺 Symptom checking\n• 💊 Medicine ordering\n• 🏥 Finding hospitals\n• 🚑 Emergency services\n• 💳 Payments\n• 🩸 Blood donation\n\nJust ask me anything!" },
+                { kw: ['thank', 'thanks', 'bye', 'ok'], resp: "You're welcome! 😊 Stay healthy and take care. Remember, MediConnect is available 24/7 for your healthcare needs. Don't hesitate to reach out anytime! 🏥" },
             ];
             const lower = message.toLowerCase();
             let best = null, bestScore = 0;
@@ -246,7 +258,7 @@ const api = {
                 const score = entry.kw.filter(k => lower.includes(k)).length;
                 if (score > bestScore) { bestScore = score; best = entry; }
             }
-            const response = best && bestScore > 0 ? best.resp : "Hello! I'm MediConnect AI. Ask me about appointments, symptoms, medicines, hospitals, payments, or emergency services!";
+            const response = best && bestScore > 0 ? best.resp : "Hello! I'm MediConnect AI powered Health Assistant. I can help you with:\n\n• Booking appointments with doctors\n• Checking symptoms with AI\n• Finding nearby hospitals\n• Ordering medicines\n• Emergency ambulance services\n• Payment queries\n• Blood & organ donation\n\nPlease ask me about any of these topics!";
             return Promise.resolve({ message, response, id: Date.now() });
         },
         history: () => Promise.resolve([]),
@@ -290,7 +302,7 @@ function showPaymentModal(amount, description, onSuccess) {
         document.getElementById('pay-confirm-btn').style.display = 'flex';
         const area = document.getElementById('payment-form-area');
         if (method === 'UPI') {
-            area.innerHTML = '<div class="form-group"><label class="form-label">UPI ID</label><input class="form-control" placeholder="name@upi" id="upi-id" /></div><div style="display:flex;gap:6px;margin-top:6px;"><span class="tag">GPay</span><span class="tag">PhonePe</span><span class="tag">Paytm</span><span class="tag">BHIM</span></div>';
+            area.innerHTML = `<div class="form-group"><label class="form-label">UPI ID</label><input class="form-control" placeholder="name@upi" id="upi-id" /></div><div style="display:flex;gap:6px;margin-top:6px;"><span class="tag">GPay</span><span class="tag">PhonePe</span><span class="tag">Paytm</span><span class="tag">BHIM</span></div>`;
         } else if (method === 'Credit Card') {
             area.innerHTML = '<div class="form-group"><label class="form-label">Card Number</label><input class="form-control" placeholder="XXXX XXXX XXXX XXXX" maxlength="19" /></div><div class="form-row"><div class="form-group"><label class="form-label">Expiry</label><input class="form-control" placeholder="MM/YY" maxlength="5" /></div><div class="form-group"><label class="form-label">CVV</label><input class="form-control" placeholder="***" maxlength="3" type="password" /></div></div>';
         } else {
@@ -298,8 +310,17 @@ function showPaymentModal(amount, description, onSuccess) {
         }
     };
     window.confirmPayment = () => {
+        if (selectedMethod === 'UPI') {
+            const upiId = document.getElementById('upi-id')?.value?.trim();
+            if (!upiId) { showToast('Please enter your UPI ID', 'warning'); return; }
+            // Generate UPI deep link
+            const upiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=MediConnect&am=${amount}&cu=INR&tn=${encodeURIComponent(description)}`;
+            window.open(upiLink, '_blank');
+            showToast(`UPI payment request sent to ${upiId}. Complete in your UPI app. ✅`);
+        } else {
+            showToast(`Payment of ₹${amount} via ${selectedMethod} successful! ✅`);
+        }
         overlay.remove();
-        showToast(`Payment of ₹${amount} via ${selectedMethod} successful! ✅`);
         if (onSuccess) onSuccess(selectedMethod);
     };
 }

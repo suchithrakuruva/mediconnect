@@ -12,7 +12,7 @@ function renderHome() {
           </div>
           <div>
             <h1 class="brand-name">MediConnect</h1>
-            <p class="brand-affiliation">Affiliated by KMC</p>
+            <p class="brand-affiliation">Affiliated to KMC · Your Health, Our Priority</p>
           </div>
         </div>
       </div>

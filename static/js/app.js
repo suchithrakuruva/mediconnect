@@ -27,8 +27,9 @@ function buildLayout() {
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <h1>Medi<span>Connect</span></h1>
+        <h1>🏥 Medi<span>Connect</span></h1>
         <p>AI for Equitable Healthcare 🇮🇳</p>
+        <p style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;">Affiliated to KMC · Your Health, Our Priority</p>
       </div>
       <div class="sidebar-nav" id="sidebar-nav"></div>
     </nav>
@@ -76,7 +77,8 @@ function buildLayout() {
             <h3>About Us</h3>
             <p>MediConnect is India's AI-powered healthcare platform bridging urban-rural healthcare gaps. 
             We connect patients with doctors, hospitals, and emergency services through cutting-edge technology.</p>
-            <p style="margin-top:8px;"><strong>Affiliated by KMC</strong> (Karnataka Medical Council)</p>
+            <p style="margin-top:8px;"><strong>Affiliated to KMC</strong> (Kurnool Medical College)</p>
+            <p style="margin-top:4px;font-size:12px;color:rgba(255,255,255,.7);font-style:italic;">✨ Your Health, Our Priority</p>
           </div>
           <div class="footer-col">
             <h3>Quick Links</h3>
@@ -90,7 +92,7 @@ function buildLayout() {
             <h3>Contact Us</h3>
             <p><i class="fas fa-envelope"></i> admin@mediconnect.in</p>
             <p><i class="fas fa-phone"></i> 1800-180-1104 (Toll-free)</p>
-            <p><i class="fas fa-map-marker-alt"></i> Bengaluru, Karnataka, India</p>
+            <p><i class="fas fa-map-marker-alt"></i> Kurnool, AP, India</p>
             <div class="footer-social">
               <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook-f"></i></a>
               <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
@@ -191,7 +193,64 @@ function handleResize() {
 }
 window.addEventListener('resize', handleResize);
 
-document.addEventListener('DOMContentLoaded', () => {
+// Auth system
+let currentUser = JSON.parse(localStorage.getItem('mc_user') || 'null');
+
+function showAuthOverlay() {
+  const overlay = document.createElement('div');
+  overlay.id = 'auth-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0A2463 0%,#1a3a7a 40%,#2A5DB0 100%);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:40px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:48px;">🏥</div>
+        <h1 style="font-size:26px;font-weight:800;color:#0A2463;margin:8px 0 4px;">MediConnect</h1>
+        <p style="font-size:13px;color:#64748B;font-style:italic;">Your Health, Our Priority</p>
+        <p style="font-size:11px;color:#2A9D8F;font-weight:600;letter-spacing:1px;text-transform:uppercase;">AFFILIATED TO KMC</p>
+      </div>
+      <div id="auth-step-login">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:4px;">Welcome Back</h2>
+        <p style="font-size:13px;color:#64748B;margin-bottom:16px;">Sign in to access your healthcare dashboard</p>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;color:#64748B;display:block;margin-bottom:4px;">Full Name</label><input id="auth-name" class="form-control" placeholder="Enter your name" /></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;color:#64748B;display:block;margin-bottom:4px;">Email Address</label><input id="auth-email" class="form-control" type="email" placeholder="Enter your email" /></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;color:#64748B;display:block;margin-bottom:4px;">I am a</label>
+          <div style="display:flex;gap:10px;">
+            <button onclick="selectRole(this,'Patient')" class="role-btn active" style="flex:1;padding:12px;border:2px solid #0A2463;border-radius:8px;background:rgba(10,36,99,.08);cursor:pointer;font-weight:600;font-size:14px;">👤 Patient</button>
+            <button onclick="selectRole(this,'Doctor')" class="role-btn" style="flex:1;padding:12px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:14px;">👨‍⚕️ Doctor</button>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;color:#64748B;display:block;margin-bottom:4px;">Password</label><input id="auth-pass" class="form-control" type="password" placeholder="Enter your password" /></div>
+        <button onclick="doLogin()" class="btn btn-primary btn-full btn-lg" style="margin-top:8px;"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+let authRole = 'Patient';
+window.selectRole = function (btn, role) {
+  authRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => { b.style.borderColor = '#e2e8f0'; b.style.background = '#fff'; });
+  btn.style.borderColor = '#0A2463'; btn.style.background = 'rgba(10,36,99,.08)';
+};
+
+window.doLogin = function () {
+  const name = document.getElementById('auth-name')?.value?.trim();
+  const email = document.getElementById('auth-email')?.value?.trim();
+  if (!name || !email) { showToast('Please enter name and email', 'warning'); return; }
+  currentUser = { name, email, role: authRole };
+  localStorage.setItem('mc_user', JSON.stringify(currentUser));
+  document.getElementById('auth-overlay')?.remove();
   buildLayout();
   setTimeout(handleResize, 0);
+  showToast(`Welcome, ${name}! Logged in as ${authRole}`);
+};
+
+function requireAuth() {
+  if (!currentUser) { showToast('Please sign in first', 'warning'); showAuthOverlay(); return false; }
+  return true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!currentUser) { showAuthOverlay(); }
+  else { buildLayout(); setTimeout(handleResize, 0); }
 });

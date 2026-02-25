@@ -1,30 +1,30 @@
-// SYMPTOM CHECKER PAGE — Enhanced with uploads, metrics, pain scale
+// SYMPTOM CHECKER PAGE — Free text input with voice
 let selectedSymptoms = [];
 
 function renderSymptomChecker() {
   const el = document.getElementById('page-content');
   el.innerHTML = `
     <div class="page-title">🩺 ${t('symptom_checker')}</div>
-    <div class="page-subtitle">AI-powered symptom analysis with image scanning and personalized triage</div>
+    <div class="page-subtitle">AI-powered symptom analysis — describe your symptoms freely</div>
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">🩺 Select Symptoms</div>
-        <div class="card-subtitle">Tap the symptoms you are experiencing</div>
+        <div class="card-title">🩺 Describe Your Symptoms</div>
+        <div class="card-subtitle">Type or speak your symptoms in detail below</div>
 
-        <div class="form-group">
-          <div class="search-wrap">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="form-control" id="symptom-search" placeholder="${t('search')} symptoms..." oninput="filterSymptomChips(this.value)" />
+        <div class="form-group" style="margin-top:12px;">
+          <textarea class="form-control" id="symptom-freetext" rows="5" placeholder="Example: I have been experiencing headache, fever, and body pain for the last 2 days. I also feel dizzy and nauseous..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-outline btn-sm" onclick="startVoiceInput()">
+              <i class="fas fa-microphone" id="voice-input-icon"></i> Speak Symptoms
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('symptom-freetext').value=''">
+              <i class="fas fa-eraser"></i> Clear
+            </button>
           </div>
         </div>
 
-        <div id="symptom-chips" class="symptom-chips">
-          <div class="loader"><div class="spinner"></div></div>
-        </div>
-
         <div class="divider"></div>
-        <div id="selected-list" class="mb-2"></div>
 
         <!-- Patient Metrics -->
         <div class="form-section">
@@ -89,12 +89,6 @@ function renderSymptomChecker() {
           <div id="uploaded-files" style="margin-top:8px;"></div>
         </div>
 
-        <!-- Additional Notes -->
-        <div class="form-group">
-          <label class="form-label">Additional details (optional)</label>
-          <textarea class="form-control" id="symptom-notes" rows="3" placeholder="Duration, severity, or any other notes..."></textarea>
-        </div>
-
         <button class="btn btn-primary btn-full btn-lg" onclick="runTriage()">
           <i class="fas fa-brain"></i> ${t('analyse')}
         </button>
@@ -105,14 +99,7 @@ function renderSymptomChecker() {
           <div class="card text-center" style="padding:60px 20px;">
             <div style="font-size:52px;margin-bottom:16px;">🧠</div>
             <div style="font-size:17px;font-weight:700;color:var(--primary);">AI Triage Ready</div>
-            <div class="text-muted text-sm mt-1">Select symptoms, fill details, and click Analyse</div>
-            <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:12px;text-align:left;">
-              <div class="text-sm font-bold mb-1">🔬 Powered by:</div>
-              <div class="text-xs text-muted">• TensorFlow.js for image analysis</div>
-              <div class="text-xs text-muted">• OpenCV-compatible scanning</div>
-              <div class="text-xs text-muted">• RAG-based symptom matching</div>
-              <div class="text-xs text-muted">• Medical knowledge graph</div>
-            </div>
+            <div class="text-muted text-sm mt-1">Describe your symptoms freely and click Analyse</div>
           </div>
         </div>
 
@@ -129,65 +116,38 @@ function renderSymptomChecker() {
   `;
 
   selectedSymptoms = [];
-  loadSymptomChips();
 }
 
 let allSymptoms = [];
 let uploadedFileNames = [];
+let scRecognition = null;
 
-function loadSymptomChips() {
-  api.symptoms.common().then(symptoms => {
-    allSymptoms = symptoms;
-    renderSymptomChips(symptoms);
-  }).catch(() => {
-    allSymptoms = ['Fever', 'Cough', 'Cold', 'Headache', 'Body Pain', 'Fatigue',
-      'Diarrhea', 'Vomiting', 'Rash', 'Chest Pain', 'Shortness of Breath',
-      'Abdominal Pain', 'Back Pain', 'Joint Pain', 'Sore Throat',
-      'Dizziness', 'Nausea', 'Swelling', 'Numbness', 'Blurred Vision'];
-    renderSymptomChips(allSymptoms);
-  });
-}
+// Voice input for symptom checker
+function startVoiceInput() {
+  const icon = document.getElementById('voice-input-icon');
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('Voice input not supported in this browser', 'error'); return;
+  }
+  if (scRecognition) { scRecognition.stop(); scRecognition = null; if (icon) icon.className = 'fas fa-microphone'; return; }
 
-function renderSymptomChips(symptoms) {
-  const c = document.getElementById('symptom-chips');
-  if (!c) return;
-  c.innerHTML = '';
-  symptoms.forEach(s => {
-    const chip = document.createElement('div');
-    chip.className = 'symptom-chip' + (selectedSymptoms.includes(s) ? ' selected' : '');
-    chip.textContent = s;
-    chip.onclick = () => toggleSymptom(s, chip);
-    c.appendChild(chip);
-  });
-}
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  scRecognition = new SR();
+  scRecognition.lang = 'en-IN';
+  scRecognition.continuous = true;
+  scRecognition.interimResults = true;
 
-function filterSymptomChips(val) {
-  const filtered = val ? allSymptoms.filter(s => s.toLowerCase().includes(val.toLowerCase())) : allSymptoms;
-  renderSymptomChips(filtered);
-}
-
-function toggleSymptom(s, chip) {
-  const idx = selectedSymptoms.indexOf(s);
-  if (idx === -1) { selectedSymptoms.push(s); chip.classList.add('selected'); }
-  else { selectedSymptoms.splice(idx, 1); chip.classList.remove('selected'); }
-  updateSelectedList();
-}
-
-function updateSelectedList() {
-  const el = document.getElementById('selected-list');
-  if (!el) return;
-  if (!selectedSymptoms.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <div class="text-sm text-muted mb-1">Selected (${selectedSymptoms.length}):</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-      ${selectedSymptoms.map(s => `<span class="tag primary">${s} <span onclick="removeSymptom('${s}')" style="cursor:pointer;margin-left:4px;opacity:0.6;">✕</span></span>`).join('')}
-    </div>`;
-}
-
-function removeSymptom(s) {
-  selectedSymptoms = selectedSymptoms.filter(x => x !== s);
-  updateSelectedList();
-  renderSymptomChips(allSymptoms);
+  scRecognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    document.getElementById('symptom-freetext').value = transcript;
+  };
+  scRecognition.onend = () => { scRecognition = null; if (icon) icon.className = 'fas fa-microphone'; };
+  scRecognition.onerror = () => { scRecognition = null; if (icon) icon.className = 'fas fa-microphone'; };
+  scRecognition.start();
+  if (icon) icon.className = 'fas fa-microphone-slash';
+  showToast('🎤 Listening... speak your symptoms now', 'success');
 }
 
 function handleFileUpload(input) {
@@ -208,10 +168,16 @@ function handleFileUpload(input) {
 }
 
 async function runTriage() {
-  if (selectedSymptoms.length === 0) {
-    showToast('Please select at least one symptom', 'warning');
+  const freeText = document.getElementById('symptom-freetext')?.value?.trim();
+  if (!freeText) {
+    showToast('Please describe your symptoms', 'warning');
     return;
   }
+
+  // Extract symptoms from free text
+  const words = freeText.toLowerCase().split(/[\s,;.]+/);
+  selectedSymptoms = [freeText]; // Pass entire text for matching
+
   const resultArea = document.getElementById('triage-result-area');
   resultArea.innerHTML = '<div class="loader"><div class="spinner"></div><span>Analysing with AI...</span></div>';
 
@@ -221,7 +187,6 @@ async function runTriage() {
   const weight = document.getElementById('sc-weight')?.value || '';
   const duration = document.getElementById('sc-duration')?.value || '';
   const painScale = document.getElementById('sc-pain')?.value || '5';
-  const notes = document.getElementById('symptom-notes')?.value || '';
 
   try {
     const result = await api.symptoms.triage(selectedSymptoms);
@@ -249,7 +214,10 @@ async function runTriage() {
             <div style="margin:16px 0;padding:12px;background:rgba(0,0,0,0.06);border-radius:10px;">
               <strong>Recommended Specialist:</strong> ${result.recommended_specialty}
             </div>
-            ${uploadedFileNames.length ? `<div class="text-sm text-muted mb-2">📎 ${uploadedFileNames.length} file(s) analysed</div>` : ''}
+            <button class="btn btn-outline btn-sm mt-2" onclick="speakResults('${u}', '${result.recommendation.replace(/'/g, "\\'")}', '${result.recommended_specialty}')">
+              <i class="fas fa-volume-up"></i> Listen to Results (Voice)
+            </button>
+            ${uploadedFileNames.length ? `<div class="text-sm text-muted mb-2 mt-1">📎 ${uploadedFileNames.length} file(s) analysed</div>` : ''}
             ${u === 'emergency' ?
         `<button class="btn btn-danger btn-lg mt-2" onclick="navigate('emergency')"><i class="fas fa-ambulance"></i> Request Ambulance Now</button>` :
         `<button class="btn btn-primary mt-2" onclick="navigate('doctors')"><i class="fas fa-user-md"></i> Find ${result.recommended_specialty}</button>`}
@@ -271,4 +239,16 @@ async function runTriage() {
   } catch {
     resultArea.innerHTML = '<div class="alert alert-warning">⚠️ Could not connect to the triage service. Please ensure the backend is running.</div>';
   }
+}
+
+// Voice over results using SpeechSynthesis
+function speakResults(urgency, recommendation, specialty) {
+  if (!('speechSynthesis' in window)) { showToast('Speech not supported', 'error'); return; }
+  window.speechSynthesis.cancel();
+  const text = `Your symptom analysis shows ${urgency} priority. ${recommendation}. Recommended specialist is ${specialty}.`;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-IN';
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+  showToast('🔊 Reading results aloud...', 'success');
 }

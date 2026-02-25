@@ -40,19 +40,26 @@ function renderApptList() {
         </table>
       </div>`;
     const tbody = document.getElementById('appt-tbody');
-    appts.forEach(a => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="font-bold">Doctor #${a.doctor_id}</td>
-        <td>${formatDate(a.appointment_date)}</td>
-        <td>${a.appointment_time}</td>
-        <td><span class="badge badge-primary">${a.type}</span></td>
-        <td><span class="badge badge-${statusColors[a.status] || 'info'}">${a.status}</span></td>
-        <td><span class="badge badge-${a.payment_status === 'paid' ? 'success' : 'warning'}">${a.payment_status || 'pending'}</span></td>
-        <td>${a.status === 'scheduled' ? `<button class="btn btn-sm btn-danger" onclick="cancelAppt(${a.id}, this)">Cancel</button>` : '—'}</td>
-      `;
-      tbody.appendChild(tr);
+    // Load doctor names
+    api.doctors.list().then(docs => {
+      const docMap = {};
+      docs.forEach(d => docMap[d.id] = d.name);
+      appts.forEach(a => {
+        const tr = document.createElement('tr');
+        const doctorName = docMap[a.doctor_id] || `Dr. Unknown (ID: ${a.doctor_id})`;
+        tr.innerHTML = `
+          <td class="font-bold">${doctorName}</td>
+          <td>${formatDate(a.appointment_date)}</td>
+          <td>${a.appointment_time}</td>
+          <td><span class="badge badge-primary">${a.type}</span></td>
+          <td><span class="badge badge-${statusColors[a.status] || 'info'}">${a.status}</span></td>
+          <td><span class="badge badge-${a.payment_status === 'paid' ? 'success' : 'warning'}">${a.payment_status || 'pending'}</span></td>
+          <td>${a.status === 'scheduled' ? `<button class="btn btn-sm btn-danger" onclick="cancelAppt(${a.id}, this)">Cancel</button>` : '—'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     });
+
   }).catch(() => {
     c.innerHTML = '<div class="alert alert-warning">Could not load appointments.</div>';
   });
